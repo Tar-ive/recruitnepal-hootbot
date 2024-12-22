@@ -47,14 +47,23 @@ export function registerRoutes(app: Express) {
         where: eq(interviews.id, parseInt(req.params.id)),
         with: {
           candidate: true,
-          messages: true
+          messages: {
+            orderBy: (messages, { asc }) => [asc(messages.timestamp)]
+          }
         }
       });
 
-      if (!interview) throw new Error("Interview not found");
+      if (!interview || !interview.candidate) {
+        throw new Error("Interview or candidate not found");
+      }
 
       const signedCvUrl = await getSignedCVUrl(interview.candidate.cvUrl);
-      res.json({ ...interview, candidate: { ...interview.candidate, signedCvUrl } });
+      res.json({ 
+        ...interview, 
+        status: interview.status || 'in_progress',
+        messages: interview.messages || [],
+        candidate: { ...interview.candidate, signedCvUrl }
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

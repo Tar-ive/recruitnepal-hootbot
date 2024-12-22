@@ -18,7 +18,7 @@ export function registerRoutes(app: Express) {
       if (!file) throw new Error("No file uploaded");
 
       const cvUrl = await uploadCV(file.buffer, file.originalname);
-      const cvAnalysis = await analyzeCv(file.buffer.toString());
+      const cvAnalysis = await analyzeCv(file.buffer);
 
       const [candidate] = await db
         .insert(candidates)

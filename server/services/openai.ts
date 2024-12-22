@@ -4,9 +4,11 @@ import { type Message } from "@db/schema";
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
 const openai = new OpenAI();
 
-export async function analyzeCv(text: string) {
-  // Truncate text to ~15k chars to stay well within token limits
-  const truncatedText = text.slice(0, 15000);
+import * as pdfParse from 'pdf-parse';
+
+export async function analyzeCv(buffer: Buffer) {
+  const pdfData = await pdfParse(buffer);
+  const truncatedText = pdfData.text.slice(0, 15000);
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [

@@ -5,8 +5,8 @@ import { type Message } from "@db/schema";
 const openai = new OpenAI();
 
 export async function analyzeCv(text: string) {
-  // Truncate text to ~30k chars to stay within API limits
-  const truncatedText = text.slice(0, 30000);
+  // Truncate text to ~15k chars to stay well within token limits
+  const truncatedText = text.slice(0, 15000);
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [

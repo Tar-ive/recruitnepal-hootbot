@@ -1,10 +1,34 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import dotenv from 'dotenv';
+import multer from 'multer';
+import OpenAI from "openai";
+import { type Message } from "@db/schema";
+import { analyzeCv } from './services/openai';
+
+dotenv.config();
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+const upload = multer();
+
+app.post('/upload', upload.single('cv'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded." });
+    }
+
+    const cvAnalysis = await analyzeCv(req.file.buffer);
+    return res.status(200).json(cvAnalysis);
+  } catch (error) {
+    console.error("Error analyzing CV:", error);
+    return res.status(500).json({ message: "Error analyzing CV." });
+  }
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -47,18 +71,13 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client
-  const PORT = 5000;
+  const PORT = 5001;
   server.listen(PORT, "0.0.0.0", () => {
     log(`serving on port ${PORT}`);
   });
